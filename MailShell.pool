@@ -1,0 +1,120 @@
+__________
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+class MailServer:
+    def __init__(self):
+        # Mapeamento automático de hosts comuns
+        self.hosts_config = {
+            'gmail.com': ('smtp.gmail.com', 587),
+            'yahoo.com': ('smtp.mail.yahoo.com', 587),
+            'outlook.com': ('://office365.com', 587),
+            'hotmail.com': ('://office365.com', 587)
+        }
+        self.server = None
+        self.user = None
+
+    def conn(self, provider_or_host, port=None):
+        try:
+            # Se for um provedor conhecido (ex: gmail.com), pega auto
+            if provider_or_host in self.hosts_config:
+                host, port = self.hosts_config[provider_or_host]
+            else:
+                host = provider_or_host
+                port = port or 587
+
+            self.server = smtplib.SMTP(host, port)
+            self.server.starttls()  # Camada de segurança obrigatória
+            return True
+        except Exception as e:
+            return {"error": "connection_error", "detail": str(e)}
+
+    def login(self, user, password):
+        try:
+            self.user = user
+            self.server.login(user, password)
+            return True
+        except Exception as e:
+            return {"error": "auth_error", "detail": str(e)}
+
+    def send(self, to, subject, body, html=False):
+        try:
+            # Montagem profissional da mensagem MIME
+            msg = MIMEMultipart()
+            msg['From'] = self.user
+            msg['To'] = to
+            msg['Subject'] = subject
+
+            # Suporte a texto puro ou HTML
+            mime_type = 'html' if html else 'plain'
+            msg.attach(MIMEText(body, mime_type))
+
+            self.server.send_message(msg)
+            return True
+        except Exception as e:
+            return {"error": "send_error", "detail": str(e)}
+
+    def quit(self):
+        if self.server:
+            self.server.quit()
+            self.server = None
+
+"""
+uso
+
+
+"""
+
+________________
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+import os
+
+class MailMessage:
+    def __init__(self):
+        # O "container" oficial de uma mensagem profissional
+        self.msg = MIMEMultipart()
+
+    def from_address(self, address):
+        self.msg['From'] = address
+
+    def to(self, address):
+        self.msg['To'] = address
+
+    def subject(self, title):
+        self.msg['Subject'] = title
+
+    def body(self, content, is_html=False):
+        # Define se o corpo é texto puro ou HTML
+        tipo = 'html' if is_html else 'plain'
+        self.msg.attach(MIMEText(content, tipo))
+
+    def attach(self, file_path):
+        """
+        Lógica profissional para anexar arquivos (PDF, Imagens, etc)
+        """
+        if not os.path.exists(file_path):
+            return {"error": "file_not_found", "path": file_path}
+
+        filename = os.path.basename(file_path)
+        try:
+            with open(file_path, "rb") as attachment:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(attachment.read())
+            
+            encoders.encode_base64(part)
+            part.add_header(
+                "Content-Disposition",
+                f"attachment; filename={filename}",
+            )
+            self.msg.attach(part)
+            return True
+        except Exception as e:
+            return {"error": "attach_error", "detail": str(e)}
+
+    def get_as_string(self):
+        # Retorna a mensagem pronta para o MailServer enviar
+        return self.msg
