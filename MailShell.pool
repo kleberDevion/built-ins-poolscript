@@ -59,14 +59,7 @@ class MailServer:
         if self.server:
             self.server.quit()
             self.server = None
-
-"""
-uso
-
-
-"""
-
-________________
+_____________
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -118,3 +111,21 @@ class MailMessage:
     def get_as_string(self):
         # Retorna a mensagem pronta para o MailServer enviar
         return self.msg
+_____________________________
+
+#uso
+
+# 1. Cria a mensagem
+msg = MailMessage()
+msg.from_address("seu-email@gmail.com")
+msg.to("destino@site.com")
+msg.subject("Relatório Mensal")
+msg.body("Segue o <b>PDF</b> em anexo", is_html=True)
+msg.attach("documento.pdf")
+
+# 2. Usa o servidor para enviar
+server = MailServer()
+server.conn("gmail.com")
+server.login("user", "pass")
+server.send(msg) # passando o objeto
+server.quit()
